@@ -1,0 +1,6 @@
+{
+  "name": "Termsreader",
+  "description": "AI-powered tool to summarize and compare privacy policies and terms of service directly in your browser.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

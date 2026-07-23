@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Termsreader AI Sidebar</title>
+  <style>
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+      
+      --color-primary: #2563eb; /* Blue-600 */
+      --color-primary-hover: #1d4ed8;
+      
+      --color-success: #10b981; /* Emerald-500 */
+      --color-success-bg: #ecfdf5;
+      --color-success-border: #a7f3d0;
+      
+      --color-warning: #f59e0b; /* Amber */
+      --color-warning-bg: #fffbeb;
+      --color-warning-border: #fde68a;
+      
+      --color-danger: #ef4444; /* Red-500 */
+      --color-danger-bg: #fef2f2;
+      --color-danger-border: #fca5a5;
+      
+      --color-indigo: #6366f1; /* Indigo-500 */
+      --color-indigo-bg: #f5f3ff;
+      --color-indigo-border: #ddd6fe;
+      
+      --color-slate-50: #f8fafc;
+      --color-slate-100: #f1f5f9;
+      --color-slate-200: #e2e8f0;
+      --color-slate-400: #94a3b8;
+      --color-slate-500: #64748b;
+      --color-slate-700: #334155;
+      --color-slate-800: #1e293b;
+      --color-slate-900: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      margin: 0;
+      padding: 14px;
+      background-color: var(--color-slate-50);
+      color: var(--color-slate-800);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-slate-200);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-slate-400);
+    }
+
+    /* Header UI */
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-slate-200);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--color-slate-900);
+    }
+
+    .header-logo svg, .header-logo img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: var(--color-slate-500);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .logout-btn:hover {
+      background-color: var(--color-slate-100);
+      color: var(--color-slate-900);
+    }
+
+    /* Tabs switcher */
+    .tabs-switcher {
+      display: flex;
+      background-color: var(--color-slate-100);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: none;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 6px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      color: var(--color-slate-500);
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background-color: white;
+      color: var(--color-slate-900);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    /* Cards */
+    .card {
+      background-color: white;
+      border: 1px solid var(--color-slate-200);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-slate-900);
+      margin-top: 0;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Status Display */
+    .status-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background-color: white;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--color-slate-200);
+      margin-bottom: 12px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--color-slate-200);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #status {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-slate-700);
+    }
+
+    /* Dynamic URLs display */
+    #current-url {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--color-slate-500);
+      word-break: break-all;
+      background: var(--color-slate-50);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--color-slate-200);
+      margin-top: 6px;
+    }
+
+    /* Paste manual area */
+    #manual-container textarea {
+      width: 100%;
+      height: 110px;
+      padding: 10px;
+      background-color: var(--color-slate-50);
+      border: 1px solid var(--color-slate-200);
+      border-radius: 10px;
+      font-size: 12px;
+      resize: vertical;
+      font-family: var(--font-sans);
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    #manual-container textarea:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background-color: var(--color-slate-900);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-slate-800);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      border-color: var(--color-slate-200);
+      color: var(--color-slate-700);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--color-slate-50);
+    }
+
+    .btn-accent {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .btn-accent:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Suggested legal links lists */
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background-color: var(--color-slate-50);
+      border: 1px solid var(--color-slate-200);
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .link-item-text {
+      font-weight: 600;
+      color: var(--color-slate-700);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-right: 12px;
+      max-width: 150px;
+    }
+
+    .link-item-btn {
+      background-color: white;
+      border: 1px solid var(--color-slate-200);
+      color: var(--color-primary);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .link-item-btn:hover {
+      background-color: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    /* Login Area */
+    .login-box {
+      text-align: center;
+      padding: 24px 16px;
+      background-color: white;
+      border-radius: 14px;
+      border: 1px dashed var(--color-primary);
+    }
+
+    .login-box p {
+      margin-top: 0;
+      margin-bottom: 14px;
+      color: var(--color-slate-700);
+      font-weight: 500;
+    }
+
+    /* Usage Indicator card */
+    .usage-card {
+      background-color: white;
+      border: 1px solid var(--color-slate-200);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .usage-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--color-slate-500);
+    }
+
+    .usage-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: var(--color-slate-100);
+      color: var(--color-slate-700);
+    }
+
+    .usage-badge.pro {
+      background-color: #e0e7ff;
+      color: #3f51b5;
+    }
+
+    .progress-bar-container {
+      height: 6px;
+      width: 100%;
+      background-color: var(--color-slate-200);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 8px;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--color-primary);
+      border-radius: 9999px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .usage-text-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--color-slate-500);
+      font-weight: 500;
+    }
+
+    .upgrade-link {
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .upgrade-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Score results block */
+    .score-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--color-slate-200);
+      margin-bottom: 12px;
+    }
+
+    .score-banner-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-slate-500);
+    }
+
+    .score-banner-tier {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-slate-400);
+      margin-top: 1px;
+    }
+
+    .score-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 950;
+      font-size: 1.15rem;
+      color: white;
+      background-color: var(--color-success);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .verdict-box {
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      font-style: italic;
+      color: #3b82f6;
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 10px 12px;
+      border-radius: 10px;
+    }
+
+    /* Collapsible Sections for scans results */
+    .section {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--color-slate-200);
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .section-header {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+      background-color: var(--color-slate-50);
+    }
+
+    .section-header:hover {
+      background: var(--color-slate-100);
+    }
+
+    .section-title {
+      font-weight: 750;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .section-icon {
+      transition: transform 0.2s;
+      font-size: 10px;
+      color: var(--color-slate-500);
+    }
+
+    .section.collapsed .section-icon {
+      transform: rotate(-90deg);
+    }
+
+    .section.collapsed .section-content {
+      display: none;
+    }
+
+    .section-content {
+      padding: 10px 12px;
+    }
+
+    /* Point cards mirroring website */
+    .point-card {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--color-slate-100);
+      background-color: var(--color-slate-50);
+      margin-bottom: 6px;
+    }
+
+    .point-card.conflict {
+      background-color: #fef2f2;
+      border-color: #fee2e2;
+    }
+
+    .point-card.accepted {
+      background-color: #ecfdf5;
+      border-color: #d1fae5;
+    }
+
+    .point-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+
+    .point-category {
+      font-size: 9.5px;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--color-slate-500);
+    }
+
+    .point-impact-badge {
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background-color: #fee2e2;
+      color: #ef4444;
+      text-transform: uppercase;
+    }
+
+    .point-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-slate-900);
+      margin-bottom: 2px;
+    }
+
+    .point-detail {
+      font-size: 11px;
+      color: var(--color-slate-600);
+      line-height: 1.35;
+    }
+
+    /* Notification banner styles */
+    .notification-banner {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      font-size: 11.5px;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .notification-banner.restricted {
+      background-color: #f5f3ff;
+      border-color: #ddd6fe;
+      color: #4c1d95;
+    }
+
+    .notification-banner.alert {
+      background-color: #fff1f2;
+      border-color: #fecdd3;
+      color: #881337;
+    }
+
+    .notification-banner.cached {
+      background-color: var(--color-slate-100);
+      border-color: var(--color-slate-200);
+      color: var(--color-slate-700);
+    }
+
+    .notification-banner.checked {
+      background-color: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+
+    .notification-title {
+      font-weight: 750;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .notification-desc {
+      font-weight: 500;
+      color: var(--color-slate-500);
+      margin-bottom: 6px;
+    }
+
+    .notification-banner-btn {
+      background-color: #6366f1;
+      border: none;
+      color: white;
+      font-weight: 700;
+      font-size: 9.5px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .notification-banner-btn:hover {
+      background-color: #4f46e5;
+    }
+
+    /* Actions bottom bar sticky */
+    .controls-bar {
+      position: sticky;
+      bottom: -15px;
+      background: var(--color-slate-50);
+      padding-top: 10px;
+      padding-bottom: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Area -->
+  <div class="header-container">
+    <div class="header-logo">
+      <img src="logo.svg" alt="Termsreader" id="header-logo-img" onerror="this.onerror=null; this.src='logo.png';" />
+      <span>Termsreader AI</span>
+    </div>
+    <button id="logout-btn" class="logout-btn">Logout</button>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-area">
+    <div class="spinner" id="spinner"></div>
+    <div>
+      <div id="status">Loading...</div>
+      <div id="current-url" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Main Content Wrappers -->
+  <div id="main-interface" style="display: none;">
+    
+    <!-- Usage Tracking Card -->
+    <div class="usage-card" id="usage-panel" style="display: block;">
+      <div class="usage-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--color-slate-600); text-transform: uppercase; letter-spacing: 0.03em;">Subscription Plan:</span>
+          <span class="usage-badge" id="usage-plan-badge">FREE</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <span style="font-size: 11px; font-weight: 600; color: var(--color-slate-500);">Rate of Usage:</span>
+          <span id="usage-percentage-text" style="font-size: 11px; font-weight: 700; color: var(--color-primary);">0%</span>
+        </div>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="usage-bar-fill"></div>
+      </div>
+      <div class="usage-text-row">
+        <span id="usage-scans-text">0 / 5 monthly scans used</span>
+        <a id="upgrade-btn-link" href="#" target="_blank" class="upgrade-link">Upgrade to Pro</a>
+      </div>
+    </div>
+
+    <!-- Tab Controls switcher -->
+    <div class="tabs-switcher">
+      <button class="tab-btn active" id="tab-active-btn">Active Website</button>
+      <button class="tab-btn" id="tab-manual-btn">Manual Text</button>
+    </div>
+
+    <!-- Active Website panel -->
+    <div id="active-website-panel" class="space-y-4">
+      <div class="card">
+        <p class="card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary);"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          Active Tab Scanner
+        </p>
+        <p style="margin-top: 0; color: var(--color-slate-500); font-size: 11.5px; font-weight: 500; margin-bottom: 12px;">
+          Analyze the active web page for unfair terms, data privacy loopholes, and refund conditions instantly.
+        </p>
+        <button id="scan-btn" class="btn btn-accent">Analyze Active Page</button>
+      </div>
+
+      <!-- Suggested legal documents card -->
+      <div class="card" id="suggested-card" style="display: none;">
+        <p class="card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary);"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Legal Pages Detected
+        </p>
+        <div id="suggested-links-list"></div>
+      </div>
+    </div>
+
+    <!-- Manual Text panel -->
+    <div id="manual-panel" style="display: none;">
+      <div class="card" id="manual-container">
+        <p class="card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Paste Document Text
+        </p>
+        <textarea id="manual-text" placeholder="Copy policy sections or code of conduct and paste them here (minimum 50 chars)..."></textarea>
+        <button id="submit-manual" class="btn btn-primary">Analyze Paste Content</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Login Required panel -->
+  <div id="login-container" style="display: none;">
+    <div class="login-box">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary); margin-bottom: 12px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <p>Secure authentication is required to analyze policies and save scan states.</p>
+      <button id="login-btn" class="btn btn-accent">Login to Termsreader</button>
+    </div>
+  </div>
+
+  <!-- AI Results output panel -->
+  <div id="results" style="display: none;">
+    <!-- Score Card -->
+    <div class="score-banner" id="score-banner">
+      <div>
+        <div class="score-banner-label" id="score-label">Trust Score</div>
+        <div style="font-weight: 800; font-size: 14px; color: var(--color-slate-900); margin-top: 1px;" id="verdict-title">Pending</div>
+        <div class="score-banner-tier" id="pro-priority-badge">Standard Analysis</div>
+      </div>
+      <div class="score-circle" id="risk-score">--</div>
+    </div>
+
+    <!-- Notification Banners (Dynamic injection based on caching/levels) -->
+    <div id="notification-area"></div>
+
+    <!-- Verdict Quote box -->
+    <div class="verdict-box" id="verdict-text"></div>
+
+    <!-- 1. Risky / Disagreed Elements Folder -->
+    <div class="section" id="sec-disagreed">
+      <div class="section-header" id="header-sec-disagreed">
+        <div class="section-title" style="color: var(--color-danger);">Risky / Disagreed Terms</div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div class="section-content" id="disagreed-list"></div>
+    </div>
+
+    <!-- 2. Accepted Elements Folder -->
+    <div class="section" id="sec-accepted">
+      <div class="section-header" id="header-sec-accepted">
+        <div class="section-title" style="color: var(--color-success);">Accepted Elements</div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div class="section-content" id="accepted-list"></div>
+    </div>
+
+    <!-- 3. Other Terms Folder -->
+    <div class="section" id="sec-neutral">
+      <div class="section-header" id="header-sec-neutral">
+        <div class="section-title" style="color: var(--color-primary);">Other / Neutral Terms</div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div class="section-content" id="neutral-list"></div>
+    </div>
+  </div>
+
+  <!-- Footer Actions sticky panel -->
+  <div class="controls-bar" id="footer-actions" style="display: none;">
+    <button id="clear-btn" class="btn btn-secondary">Clear Results & Scan Again</button>
+  </div>
+
+  <!-- Embed sidebar.js -->
+  <script src="sidebar.js"></script>
+</body>
+</html>
