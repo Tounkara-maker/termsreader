@@ -838,12 +838,13 @@ async function startServer() {
       }
 
       try {
+        const refererHeader = req.headers.referer || (req.headers.host ? `https://${req.headers.host}` : 'https://termsreader.onrender.com');
         const ai = new GoogleGenAI({ 
           apiKey,
           httpOptions: {
             headers: {
               'User-Agent': 'aistudio-build',
-              'Referer': 'https://ais-dev-2qrvrtc44lvwefolakcjbw-179585477098.europe-west1.run.app'
+              'Referer': refererHeader
             }
           }
         });

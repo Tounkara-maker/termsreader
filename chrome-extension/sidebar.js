@@ -40,22 +40,48 @@ const secDisagreed = document.getElementById('sec-disagreed');
 const secAccepted = document.getElementById('sec-accepted');
 const secNeutral = document.getElementById('sec-neutral');
 
-let API_BASE_URL = 'https://ais-dev-2qrvrtc44lvwefolakcjbw-179585477098.europe-west1.run.app';
+const DEFAULT_API_URL = 'https://termsreader.onrender.com';
+let API_BASE_URL = DEFAULT_API_URL;
 let AUTH_URL = `${API_BASE_URL}/auth`;
 
-// Sync URLs dynamically from storage if populated from dashboard login
+// Sync URLs dynamically from storage or current active tab
 async function syncUrls() {
   try {
     let { apiUrl } = await chrome.storage.local.get('apiUrl');
+    
+    // If no API URL is saved yet, check if the current active tab is on an app domain
+    if (!apiUrl && typeof chrome !== 'undefined' && chrome.tabs) {
+      try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs && tabs[0] && tabs[0].url) {
+          const tabUrl = new URL(tabs[0].url);
+          if (
+            tabUrl.origin.includes('onrender.com') ||
+            tabUrl.origin.includes('termsreader') ||
+            tabUrl.origin.includes('localhost') ||
+            tabUrl.origin.includes('.run.app')
+          ) {
+            apiUrl = tabUrl.origin;
+          }
+        }
+      } catch (tabErr) {
+        console.warn("Could not query active tab for URL:", tabErr);
+      }
+    }
+
     if (apiUrl) {
-      let cleanUrl = apiUrl;
+      let cleanUrl = apiUrl.replace(/\/+$/, '');
       if (cleanUrl.includes('ais-pre-')) {
         cleanUrl = cleanUrl.replace('ais-pre-', 'ais-dev-');
       }
       API_BASE_URL = cleanUrl;
       AUTH_URL = `${cleanUrl}/auth`;
-      console.log(`[Sync] Dynamically synced API URLs: ${API_BASE_URL}`);
+    } else {
+      API_BASE_URL = DEFAULT_API_URL;
+      AUTH_URL = `${DEFAULT_API_URL}/auth`;
     }
+
+    console.log(`[Sync] Configured API Base URL: ${API_BASE_URL}`);
   } catch (err) {
     console.warn("Could not sync API URL: ", err);
   }
@@ -120,7 +146,8 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 // Login integration
-loginBtn.addEventListener('click', () => {
+loginBtn.addEventListener('click', async () => {
+  await syncUrls();
   chrome.tabs.create({ url: AUTH_URL });
 });
 
