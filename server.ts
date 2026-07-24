@@ -215,7 +215,15 @@ function extractTextFromHTML(html: string): string {
 
 async function extractEffectiveDate(text: string, siteUrl: string, apiKey: string): Promise<string> {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+          'Referer': 'https://ais-dev-2qrvrtc44lvwefolakcjbw-179585477098.europe-west1.run.app'
+        }
+      }
+    });
     const prompt = `
       You are an assistant. Extract or determine the "Last Updated", "Last Update", "Effective Date", "Revision Date" or equivalent date when this policy or term of service was updated/published.
       
@@ -838,13 +846,12 @@ async function startServer() {
       }
 
       try {
-        const refererHeader = req.headers.referer || (req.headers.host ? `https://${req.headers.host}` : 'https://termsreader.onrender.com');
         const ai = new GoogleGenAI({ 
           apiKey,
           httpOptions: {
             headers: {
               'User-Agent': 'aistudio-build',
-              'Referer': refererHeader
+              'Referer': 'https://ais-dev-2qrvrtc44lvwefolakcjbw-179585477098.europe-west1.run.app'
             }
           }
         });
