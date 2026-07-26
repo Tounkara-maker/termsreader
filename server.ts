@@ -252,7 +252,7 @@ async function extractEffectiveDate(text: string, siteUrl: string, apiKey: strin
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // ✅ CORS CONFIGURATION - Enable for Chrome Extension
   app.use(cors({
