@@ -56,10 +56,11 @@ async function syncUrls() {
         if (tabs && tabs[0] && tabs[0].url) {
           const tabUrl = new URL(tabs[0].url);
           if (
+            tabUrl.origin.includes('.run.app') ||
             tabUrl.origin.includes('onrender.com') ||
             tabUrl.origin.includes('termsreader') ||
             tabUrl.origin.includes('localhost') ||
-            tabUrl.origin.includes('.run.app')
+            tabUrl.protocol.startsWith('http')
           ) {
             apiUrl = tabUrl.origin;
           }
