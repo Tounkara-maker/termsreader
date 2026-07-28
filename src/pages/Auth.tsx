@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn, UserPlus, Mail, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { motion } from "motion/react";
-import { getSupabase } from "../lib/supabase";
+import { getSupabase, initSupabaseWithConfig } from "../lib/supabase";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,13 +16,31 @@ export default function Auth() {
   const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const ensureSupabaseClient = async () => {
+    let client = getSupabase();
+    if (!client) {
+      try {
+        const res = await fetch("/api/config");
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg.VITE_SUPABASE_URL && cfg.VITE_SUPABASE_ANON_KEY) {
+            client = initSupabaseWithConfig(cfg.VITE_SUPABASE_URL, cfg.VITE_SUPABASE_ANON_KEY);
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching config:", e);
+      }
+    }
+    return client;
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = getSupabase();
-    
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    const supabase = await ensureSupabaseClient();
 
     if (!isLogin && password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -31,7 +49,7 @@ export default function Auth() {
     }
 
     if (!supabase) {
-      setError("Supabase is not configured. Please ensure your environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) are set in the Settings menu and include the 'VITE_' prefix. Then, refresh this page.");
+      setError("Supabase is not configured. Please ensure your environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) are set in your service environment variables (or Settings menu).");
       setLoading(false);
       return;
     }
@@ -63,7 +81,7 @@ export default function Auth() {
   };
 
   const signInWithProvider = async (provider: 'google') => {
-    const supabase = getSupabase();
+    const supabase = await ensureSupabaseClient();
     if (!supabase) {
       setError("Supabase is not configured.");
       return;

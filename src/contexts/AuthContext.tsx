@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { getSupabase } from '../lib/supabase';
+import { getSupabase, initSupabaseWithConfig } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -43,40 +43,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+    let subscription: any = null;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.access_token) {
-        fetchProfile(session.access_token).finally(() => setLoading(false));
-        // Sync with extension content script
-        window.postMessage({ type: "TERMSREADER_SESSION", token: session.access_token, apiUrl: window.location.origin }, "*");
-      } else {
+    const initAuth = async () => {
+      let client = getSupabase();
+
+      if (!client) {
+        try {
+          const res = await fetch("/api/config");
+          if (res.ok) {
+            const cfg = await res.json();
+            if (cfg.VITE_SUPABASE_URL && cfg.VITE_SUPABASE_ANON_KEY) {
+              client = initSupabaseWithConfig(cfg.VITE_SUPABASE_URL, cfg.VITE_SUPABASE_ANON_KEY);
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching runtime config:", e);
+        }
+      }
+
+      if (!client) {
         setLoading(false);
+        return;
       }
-    });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.access_token) {
-        fetchProfile(session.access_token);
-        // Sync with extension content script
-        window.postMessage({ type: "TERMSREADER_SESSION", token: session.access_token, apiUrl: window.location.origin }, "*");
-      } else {
-        setProfile(null);
-        window.postMessage({ type: "TERMSREADER_LOGOUT" }, "*");
-      }
-    });
+      // Get initial session
+      client.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.access_token) {
+          fetchProfile(session.access_token).finally(() => setLoading(false));
+          // Sync with extension content script
+          window.postMessage({ type: "TERMSREADER_SESSION", token: session.access_token, apiUrl: window.location.origin }, "*");
+        } else {
+          setLoading(false);
+        }
+      });
 
-    return () => subscription.unsubscribe();
+      // Listen for auth changes
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.access_token) {
+          fetchProfile(session.access_token);
+          // Sync with extension content script
+          window.postMessage({ type: "TERMSREADER_SESSION", token: session.access_token, apiUrl: window.location.origin }, "*");
+        } else {
+          setProfile(null);
+          window.postMessage({ type: "TERMSREADER_LOGOUT" }, "*");
+        }
+      });
+      subscription = data.subscription;
+    };
+
+    initAuth();
+
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
   }, []);
 
   const refreshProfile = async () => {

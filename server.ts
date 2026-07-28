@@ -283,7 +283,13 @@ async function startServer() {
     next();
   });
 
-
+  // ✅ Runtime Config Endpoint for client-side Supabase credentials
+  app.get("/api/config", (req, res) => {
+    res.json({
+      VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "",
+      VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "",
+    });
+  });
 
   // Middleware to verify Supabase User
   const authenticateUser = async (req: any, res: any, next: any) => {
@@ -2234,9 +2240,27 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { index: false }));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        let html = fs.readFileSync(indexPath, "utf8");
+        const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+
+        const envScript = `<script>
+          window.__ENV__ = {
+            VITE_SUPABASE_URL: ${JSON.stringify(supabaseUrl)},
+            VITE_SUPABASE_ANON_KEY: ${JSON.stringify(supabaseAnonKey)}
+          };
+        </script>`;
+
+        html = html.replace("</head>", `${envScript}</head>`);
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.send(html);
+      } else {
+        res.status(404).send("Not found");
+      }
     });
   }
 
