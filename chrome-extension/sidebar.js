@@ -40,7 +40,7 @@ const secDisagreed = document.getElementById('sec-disagreed');
 const secAccepted = document.getElementById('sec-accepted');
 const secNeutral = document.getElementById('sec-neutral');
 
-const DEFAULT_API_URL = 'https://termsreader.onrender.com';
+const DEFAULT_API_URL = 'https://termsreader-416750644242.europe-west1.run.app';
 let API_BASE_URL = DEFAULT_API_URL;
 let AUTH_URL = `${API_BASE_URL}/auth`;
 
