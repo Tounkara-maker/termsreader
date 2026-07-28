@@ -377,35 +377,44 @@ async function startServer() {
       try {
         // 1. Fetch main profile (Safe fetch - default to free if table missing)
         let profile = null;
-        const { data: profileData, error: profileError } = await admin
+        let profileData = null;
+        let profileError = null;
+
+        const resById = await admin
           .from("profiles")
           .select("*")
           .eq("id", req.user.id)
-          .single();
+          .maybeSingle();
 
-        if (!profileError && profileData) {
+        if (resById.data) {
+          profileData = resById.data;
+        } else if (userEmail) {
+          // Fallback search by email
+          const resByEmail = await admin
+            .from("profiles")
+            .select("*")
+            .eq("email", userEmail)
+            .maybeSingle();
+          if (resByEmail.data) {
+            profileData = resByEmail.data;
+          }
+        }
+
+        if (profileData) {
           profile = { ...profileData };
           // Parse smart plan string if it exists (e.g. "pro_yearly" or "pro-yearly")
-          const planStr = String(profile.plan || "");
-          if (planStr.includes("_") || planStr.includes("-")) {
-            const separator = planStr.includes("_") ? "_" : "-";
-            const [basePlan, cycle] = planStr.split(separator);
-            profile.plan = basePlan;
-            profile.billing_cycle = cycle;
-          } else {
-            if (profile.plan === "pro") {
-              profile.billing_cycle = profile.billing_cycle || "monthly";
+          const planStr = String(profile.plan || "").toLowerCase().trim();
+          if (planStr.startsWith("pro")) {
+            profile.plan = "pro";
+            if (planStr.includes("year") || planStr.includes("annual")) {
+              profile.billing_cycle = "yearly";
             } else {
-              profile.billing_cycle = null;
+              profile.billing_cycle = parseBillingCycle(profile.billing_cycle || "monthly");
             }
-          }
-          if (profile.plan === "free") {
+          } else {
+            profile.plan = planStr || "free";
             profile.billing_cycle = null;
-          } else if (profile.billing_cycle) {
-            profile.billing_cycle = parseBillingCycle(profile.billing_cycle);
           }
-        } else if (profileError && profileError.code !== "PGRST116" && profileError.code !== "42P01") {
-          console.error("Profile Fetch Error Details:", JSON.stringify(profileError, null, 2));
         }
 
         // 2. Fetch user preferences from the specialized table
@@ -413,7 +422,7 @@ async function startServer() {
           .from("user_preferences")
           .select("*")
           .eq("user_id", req.user.id)
-          .single();
+          .maybeSingle();
 
         if (prefsError && prefsError.code !== "PGRST116" && prefsError.code !== "42P01") {
           console.error("Preferences Fetch Error:", prefsError);
@@ -422,14 +431,18 @@ async function startServer() {
         // Map DB arrays back to UI format if they exist
         let mappedPrefs = null;
         if (userPrefs) {
+          const accPP = Array.isArray(userPrefs.accepted_privacy_elements) ? userPrefs.accepted_privacy_elements : [];
+          const decPP = Array.isArray(userPrefs.declined_privacy_elements) ? userPrefs.declined_privacy_elements : [];
+          const accTC = Array.isArray(userPrefs.accepted_terms_elements) ? userPrefs.accepted_terms_elements : [];
+          const decTC = Array.isArray(userPrefs.declined_terms_elements) ? userPrefs.declined_terms_elements : [];
           mappedPrefs = {
             pp: [
-              ...userPrefs.accepted_privacy_elements.map((id: string) => ({ id, checked: true })),
-              ...userPrefs.declined_privacy_elements.map((id: string) => ({ id, checked: false }))
+              ...accPP.map((id: string) => ({ id, checked: true })),
+              ...decPP.map((id: string) => ({ id, checked: false }))
             ],
             tc: [
-              ...userPrefs.accepted_terms_elements.map((id: string) => ({ id, checked: true })),
-              ...userPrefs.declined_terms_elements.map((id: string) => ({ id, checked: false }))
+              ...accTC.map((id: string) => ({ id, checked: true })),
+              ...decTC.map((id: string) => ({ id, checked: false }))
             ]
           };
         }

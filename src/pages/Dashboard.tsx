@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import { Shield, Settings, History, Sidebar, ChevronRight, Activity, Loader2, AlertCircle, CheckCircle2, XCircle, Info, Zap, Crown, User, ExternalLink, Calendar, Lock, Save, KeyRound, Eye, EyeOff } from "lucide-react";
+import { Shield, Settings, History, Sidebar, ChevronRight, Activity, Loader2, AlertCircle, CheckCircle2, XCircle, Info, Zap, Crown, User, ExternalLink, Calendar, Lock, Save, KeyRound, Eye, EyeOff, RefreshCw } from "lucide-react";
 import PreferenceChecklist from "../components/PreferenceChecklist";
 import { useAuth } from "../contexts/AuthContext";
 import PaddleCheckoutModal from "../components/PaddleCheckoutModal";
@@ -680,6 +680,24 @@ export default function Dashboard() {
                         Get Professional Now
                       </button>
                       <p className="mt-4 text-[11px] text-slate-400 font-bold uppercase tracking-widest">No long-term commitment. Cancel anytime.</p>
+
+                      <div className="mt-6 pt-6 border-t border-slate-200/80 flex flex-col items-center gap-3">
+                        <button
+                          onClick={handleSyncPlan}
+                          disabled={syncing}
+                          className="text-xs font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-blue-600' : ''}`} />
+                          Already subscribed? Sync Paddle Status
+                        </button>
+                        {syncMessage && (
+                          <div className={`p-3 rounded-xl text-xs font-semibold w-full text-center ${
+                            syncMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-amber-50 text-amber-800 border border-amber-100'
+                          }`}>
+                            {syncMessage.text}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <PaddleCheckoutModal

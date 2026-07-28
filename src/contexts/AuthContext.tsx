@@ -36,9 +36,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setSession(null);
         setUser(null);
+      } else {
+        console.warn("Profile API returned non-OK status:", res.status);
+        setProfile((prev: any) => prev || {
+          id: user?.id,
+          email: user?.email,
+          plan: "free",
+          analyses_count: 0,
+          preferences: null
+        });
       }
     } catch (err) {
       console.error("Profile fetch error", err);
+      setProfile((prev: any) => prev || {
+        id: user?.id,
+        email: user?.email,
+        plan: "free",
+        analyses_count: 0,
+        preferences: null
+      });
     }
   };
 
